@@ -1,0 +1,131 @@
+# ATR-BOOK: System Architecture Blueprint
+
+เอกสารนี้สรุปกรอบสถาปัตยกรรมระดับระบบสำหรับ **ATR-BOOK (สมุดบันทึกอัจฉริยะ)** โดยเน้นความสามารถในการขยายตัว (Scalable) และการบูรณาการ AI แบบครบวงจร
+
+## 1) สถาปัตยกรรมระดับระบบ (System Architecture)
+
+ATR-BOOK ใช้แนวทาง **Clean Architecture** ควบคู่กับ **Feature-First Structure** เพื่อให้ทีมพัฒนาสามารถแยกความรับผิดชอบของแต่ละส่วนได้ชัดเจน ทดสอบได้ง่าย และเปลี่ยนเทคโนโลยีได้โดยกระทบธุรกิจน้อยที่สุด
+
+### 1.1 Domain Layer
+- เป็นแกนกลางของธุรกิจ ประกอบด้วย `Entities`, `Value Objects`, `Use Cases`
+- ไม่มี dependency ไปยัง framework ภายนอก
+- นิยาม contract ของ repository (interface) เพื่อให้ business logic ไม่ผูกติดกับแหล่งข้อมูลจริง
+
+### 1.2 Data Layer
+- ทำหน้าที่เชื่อม Domain กับแหล่งข้อมูลจริง
+- ประกอบด้วย `Repository Implementations`, `Data Sources`, `DTO/Mappers`
+- รองรับทั้ง
+  - **Local**: SQLite/Hive สำหรับข้อมูลโน้ต การตั้งค่า และแคช
+  - **Remote**: API สำหรับ LLM/TTS รวมถึงระบบ Authentication
+
+### 1.3 Presentation Layer
+- ส่วน UI และการจัดการ state
+- ใช้ **BLoC/Cubit** สำหรับ state management
+- แยกตาม feature เช่น `notes`, `settings`, `ai_assistant`, `export`
+
+---
+
+## 2) เทคโนโลยีหลัก (Core Tech Stack)
+
+### 2.1 Flutter Cross-platform
+- พัฒนาด้วย Flutter โค้ดฐานเดียว (single codebase)
+- **Android**: build เป็น ARM machine code (`AAB/APK`) เพื่อประสิทธิภาพระดับ native
+- **Web**: compile เป็น JavaScript + WASM พร้อมใช้ CanvasKit renderer เพื่อ UI fidelity สูง
+
+### 2.2 AI Integration
+- เชื่อมต่อ **Large Language Models (LLM)** สำหรับการสร้างข้อความ
+- เชื่อมต่อ **Neural Speech Modeling (TTS)** สำหรับสังเคราะห์เสียงพูด
+- ออกแบบฝั่งแอปให้รองรับการเปลี่ยน provider ได้ (provider-agnostic)
+
+---
+
+## 3) แนวทางการ 구현ฟีเจอร์สำคัญ (Implementation Guidelines)
+
+### 3.1 Media & File Handling
+- ใช้ `image_picker` และ `file_picker`
+- กำหนด Android permissions ใน `AndroidManifest.xml` อย่างชัดเจน
+- บีบอัดภาพอัตโนมัติ `quality: 80` เพื่อลดขนาดไฟล์และประหยัด bandwidth
+
+### 3.2 PDF Export แบบข้ามแพลตฟอร์ม
+- ใช้ conditional flow ด้วย `kIsWeb`
+- **Web**: สร้างไฟล์ดาวน์โหลดผ่าน `Blob` + `AnchorElement`
+- **Android**: บันทึกไฟล์ลง Application Sandbox โดย `path_provider`
+
+### 3.3 AI Orchestration (Text + Speech)
+- วางระบบแบบ **API-first** บนมาตรฐาน **OpenAPI 3.1**
+- รองรับ token handling, timeout, retry และ latency budgeting
+- แยก service สำหรับ text generation และ speech synthesis อย่างอิสระ
+
+---
+
+## 4) AI Prompting Specifications (YAML-based Structural Prompts)
+
+ATR-BOOK รองรับการกำกับ AI Coding Agent ผ่าน prompt แบบมีโครงสร้าง เพื่อลด hallucination และควบคุมคุณภาพสถาปัตยกรรม
+
+### 4.1 System Orchestration Prompt
+- ระบุบทบาท (persona) เป็น software architect
+- กำหนด strict rules: SOLID, Clean Architecture, testability, dependency direction
+
+### 4.2 Feature Implementation Prompt
+- ระบุ interface ที่ต้องสร้าง/ใช้ให้ชัดเจน
+- ระบุ dependency injection points
+- ระบุข้อกำหนดเรื่อง error handling, state transitions และ acceptance criteria
+
+---
+
+## 5) Interoperability & API Contract
+
+กำหนดสัญญาการเชื่อมต่อด้วย **OpenAPI 3.1.0**
+
+### 5.1 Endpoints
+- `POST /ai/generate` : สร้างข้อความ
+- `POST /ai/synthesize` : สร้างเสียงสังเคราะห์ (`audio/mpeg`)
+
+### 5.2 Security
+- ใช้ **JWT Bearer Authentication**
+- แยก access token lifecycle ออกจาก business use case
+- รองรับ token refresh และ error mapping กลับสู่ domain failure
+
+---
+
+## 6) Deployment Strategy
+
+### 6.1 Web
+- Build ด้วย renderer คุณภาพสูง: `--web-renderer canvaskit`
+
+### 6.2 Android
+- Build production ด้วย:
+  - `flutter build appbundle`
+  - `--obfuscate`
+- เพื่อเพิ่มความปลอดภัยจาก reverse engineering และลดความเสี่ยงการรั่วไหลของรายละเอียด implementation
+
+---
+
+## 7) Suggested Folder Skeleton (Feature-first + Clean)
+
+```text
+lib/
+  core/
+    network/
+    error/
+    utils/
+  features/
+    notes/
+      domain/
+      data/
+      presentation/
+    ai_assistant/
+      domain/
+      data/
+      presentation/
+    tts/
+      domain/
+      data/
+      presentation/
+    export/
+      domain/
+      data/
+      presentation/
+```
+
+โครงสร้างนี้ช่วยให้ขยายระบบเป็นรายฟีเจอร์ได้ง่าย และรักษา dependency direction ตามหลัก Clean Architecture อย่างชัดเจน
