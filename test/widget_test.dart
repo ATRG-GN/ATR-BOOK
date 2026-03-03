@@ -1,25 +1,26 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:atr_book/main.dart';
 
 void main() {
-  testWidgets('แสดงชื่อแอปและตัวนับเริ่มต้น', (WidgetTester tester) async {
+  testWidgets('แสดงชื่อแอปพร้อมจำนวนรายการฟีเจอร์ใน AppBar', (WidgetTester tester) async {
     await tester.pumpWidget(const MyApp());
 
-    expect(find.text(kAppName), findsOneWidget);
-    expect(find.text('จำนวนโน้ตที่สร้างแล้ว:'), findsOneWidget);
-    expect(find.byKey(const ValueKey('noteCounterText')), findsOneWidget);
-    expect(find.text('0'), findsOneWidget);
+    expect(find.text('$kAppName (${kFeatures.length})'), findsOneWidget);
   });
 
-  testWidgets('กดปุ่มเพิ่มโน้ตแล้วตัวนับเพิ่มขึ้น', (WidgetTester tester) async {
+  testWidgets('เรนเดอร์รายการฟีเจอร์และเลื่อนดูรายการท้ายสุดได้', (WidgetTester tester) async {
     await tester.pumpWidget(const MyApp());
 
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+    expect(find.text(kFeatures.first), findsOneWidget);
 
-    expect(find.text('1'), findsOneWidget);
-    expect(find.byTooltip('เพิ่มโน้ต'), findsOneWidget);
+    await tester.dragUntilVisible(
+      find.text(kFeatures.last),
+      find.byType(Scrollable),
+      const Offset(0, -400),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text(kFeatures.last), findsOneWidget);
   });
 }
