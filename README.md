@@ -3,6 +3,7 @@
 ## เอกสารสรุปฉบับย่อ
 
 - ดูสรุปสถาปัตยกรรมล่าสุดได้ที่ `docs/ATR-BOOK_SYSTEM_ARCHITECTURE.md`
+- ดูโครงสร้างโฟลเดอร์สำหรับเริ่มพัฒนาได้ที่ `docs/PROJECT_STRUCTURE.md`
 
 
 ## บทนำ
