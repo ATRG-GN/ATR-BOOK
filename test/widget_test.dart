@@ -9,12 +9,24 @@ void main() {
     expect(find.text('$kAppName (${kFeatures.length})'), findsOneWidget);
   });
 
-  testWidgets('แสดงรายการฟีเจอร์จากข้อมูล backlog ได้', (WidgetTester tester) async {
+  testWidgets('แสดงรายการฟีเจอร์ครบถ้วนและเรียงเลขถูกต้อง', (WidgetTester tester) async {
     await tester.pumpWidget(const MyApp());
 
+    expect(find.byType(ListTile), findsNWidgets(kFeatures.length));
     expect(find.text(kFeatures.first), findsOneWidget);
-    expect(find.text(kFeatures[1]), findsOneWidget);
-    expect(find.text('1'), findsOneWidget);
-    expect(find.text('2'), findsOneWidget);
+    expect(find.text(kFeatures.last), findsOneWidget);
+
+    // ตรวจสอบว่าหมายเลขลำดับแรกและสุดท้ายถูกแสดงบนหน้าจอ
+    expect(find.widgetWithText(CircleAvatar, '1'), findsOneWidget);
+    expect(
+      find.widgetWithText(CircleAvatar, '${kFeatures.length}'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('มีตัวคั่นระหว่างรายการตามจำนวนที่คาดหวัง', (WidgetTester tester) async {
+    await tester.pumpWidget(const MyApp());
+
+    expect(find.byType(Divider), findsNWidgets(kFeatures.length - 1));
   });
 }
