@@ -677,3 +677,44 @@ fun MyApp(
 
 - Material 3: Window size classes
 - Android Developers: Adaptive layouts (Compose/View)
+
+## แนวทางความปลอดภัยสำหรับการจัดการคีย์ API และการเรียก AI บนเว็บ
+
+### 1) Android: เก็บ API key ในพื้นที่จัดเก็บข้อมูลที่ปลอดภัย
+
+โปรเจกต์เพิ่ม `ApiKeyVault` ที่ใช้ `flutter_secure_storage` พร้อม `EncryptedSharedPreferences` สำหรับ Android:
+
+- ไฟล์: `lib/security/api_key_vault.dart`
+- การใช้งานหลัก:
+  - `saveApiKey(...)` บันทึกคีย์ลง secure storage
+  - `readApiKey()` อ่านคีย์
+  - `deleteApiKey()` ลบคีย์
+- บน Web จะ `throw UnsupportedError` เมื่อพยายามเก็บ API key เพื่อป้องกัน key leakage
+
+### 2) Web: ใช้ Backend Proxy + JWT เท่านั้น
+
+โปรเจกต์เพิ่ม client สำหรับเรียก backend proxy:
+
+- ไฟล์: `lib/network/backend_proxy_client.dart`
+- แนวทาง:
+  - ฝั่ง Flutter Web **ไม่ถือ API key ของผู้ให้บริการ AI โดยตรง**
+  - Flutter ส่งคำขอไป backend (`/v1/proxy/ai/completions`) พร้อม `Authorization: Bearer <JWT>`
+  - Backend ตรวจสอบ JWT และเป็นผู้เรียก AI provider ด้วย API key จริง
+
+และเพิ่ม `JwtSessionStore` สำหรับถือ JWT ในหน่วยความจำ:
+
+- ไฟล์: `lib/security/jwt_session_store.dart`
+- เก็บ token แบบ in-memory (`setToken`, `clear`) เพื่อลดความเสี่ยงจากการเก็บถาวรบน browser
+
+### 3) เพิ่ม dependencies ที่จำเป็น
+
+- `flutter_secure_storage` สำหรับ secure storage บน Android
+- `http` สำหรับเรียก backend proxy
+
+ตัวอย่าง flow ที่แนะนำ:
+
+1. ผู้ใช้ login และได้รับ JWT จาก backend
+2. Flutter Web เก็บ JWT ใน memory แล้วเรียก `BackendProxyClient`
+3. Android เก็บเฉพาะ API key ที่จำเป็นต้องเก็บในเครื่องผ่าน `ApiKeyVault`
+4. ทุกคำขอ AI จาก Web วิ่งผ่าน backend proxy เสมอ
+
