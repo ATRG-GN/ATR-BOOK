@@ -6,8 +6,9 @@ import 'package:http/http.dart' as http;
 ///
 /// Backend ควรเป็นผู้ถือ API key จริง และตรวจสอบ JWT ทุกคำขอ
 class BackendProxyClient {
-  BackendProxyClient({required this.baseUrl, http.Client? httpClient})
-    : _httpClient = httpClient ?? http.Client();
+  BackendProxyClient({required String baseUrl, http.Client? httpClient})
+    : baseUrl = baseUrl.replaceFirst(RegExp(r'/+$'), ''),
+      _httpClient = httpClient ?? http.Client();
 
   final String baseUrl;
   final http.Client _httpClient;
@@ -29,7 +30,12 @@ class BackendProxyClient {
       throw Exception('Proxy request failed: ${response.statusCode} ${response.body}');
     }
 
-    return jsonDecode(response.body) as Map<String, dynamic>;
+    final decodedBody = jsonDecode(response.body);
+    if (decodedBody is! Map<String, dynamic>) {
+      throw const FormatException('Proxy response must be a JSON object');
+    }
+
+    return decodedBody;
   }
 
   void close() {
