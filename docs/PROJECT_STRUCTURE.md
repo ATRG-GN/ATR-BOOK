@@ -6,8 +6,12 @@
 ```text
 atr_book/
 ├── lib/
-│   └── main.dart                     # จุดเริ่มแอปและหน้ารายการฟีเจอร์
+│   ├── main.dart                     # จุดเริ่มแอปและหน้ารายการฟีเจอร์
+│   ├── network/                      # client สำหรับเรียก backend proxy
+│   └── security/                     # การจัดเก็บ API key และ JWT ในฝั่ง client
 ├── test/
+│   ├── api_key_vault_test.dart       # ชุดทดสอบพฤติกรรมการจัดเก็บ API key
+│   ├── backend_proxy_client_test.dart # ชุดทดสอบ client สำหรับ backend proxy
 │   └── widget_test.dart              # ชุดทดสอบ Widget สำหรับหน้าหลัก
 ├── docs/
 │   ├── ATR-BOOK_SYSTEM_ARCHITECTURE.md  # วิสัยทัศน์เชิงสถาปัตยกรรมระยะยาว

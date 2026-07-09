@@ -119,7 +119,8 @@ ATR-BOOK รองรับการกำกับ AI Coding Agent ผ่าน
 
 ### 5.3 Cross-platform Secret Handling
 - **Android**
-  - จัดเก็บ JWT ด้วย `flutter_secure_storage`
+  - จัดเก็บ provider API key (ถ้าจำเป็นสำหรับ build เฉพาะ Android) ด้วย `flutter_secure_storage`
+  - เก็บ JWT แบบ in-memory เพื่อลดร่องรอยของ session token หลังปิดแอป
   - ใช้ obfuscation ใน production build เพื่อลดความเสี่ยงจาก reverse engineering
 - **Web**
   - หลีกเลี่ยงการฝัง provider API key ใน frontend โดยตรง
